@@ -1,0 +1,22 @@
+{
+  "name": "angular-query-filter",
+  "version": "0.1.0",
+  "description": "Easily query objects lists",
+  "author": {
+    "name": "Danilo Valente",
+    "email": "danilovalente96@gmail.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.8.8",
+    "gulp-browserify": "^0.5.0",
+    "gulp-clean": "^0.3.1",
+    "gulp-concat": "^2.4.1",
+    "gulp-copy": "0.0.2",
+    "gulp-jison": "^1.0.0",
+    "gulp-shell": "^0.2.9",
+    "gulp-sync": "^0.1.2",
+    "gulp-util": "^3.0.1",
+    "gulp-wrap": "^0.3.0"
+  }
+}
