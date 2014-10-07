@@ -77,5 +77,3 @@ e
     ;
 
 %%
-
-var Token = require('./token');

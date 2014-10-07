@@ -6,6 +6,8 @@ var jison = require('gulp-jison');
 var concat = require('gulp-concat');
 var wrap = require('gulp-wrap');
 var browserify = require('gulp-browserify');
+var beautify = require('gulp-beautify');
+var uglify = require('gulp-uglify');
 
 var fwrite = function (filename, contents) {
     var src = require('stream').Readable({ objectMode: true });
@@ -27,22 +29,17 @@ var ENV = {
     tmp: '.tmp'
 };
 
-gulp.task('clean:tmp', function (target) {
-    return gulp.src(ENV.tmp, { read: false })
-        .pipe(clean());
-});
+var PROJECT = {
+    name: 'angular-query-filter',
+    version: '0.1.0'
+}
 
-gulp.task('clean:release', function (target) {
-    return gulp.src(ENV.release, { read: false })
-        .pipe(clean());
-});
-
-gulp.task('copy', function () {
+/*gulp.task('copy', function () {
     return gulp.src(ENV.src + '/*.js')
         .pipe(gulp.dest(ENV.tmp));
 });
 
-/*gulp.task('lexer', function () {
+gulp.task('lexer', function () {
     return gulp.src(ENV.tmp + '/lexer.l')
         .pipe(shell([
                 'mkdir -p ' + ENV.tmp,
@@ -71,7 +68,37 @@ gulp.task('release', function () {
 
 gulp.task('jison', function () {
     return gulp.src(ENV.src + '/parser.jison')
-        .pipe(shell('jison <%= file.path %> -o ' + ENV.src + '/parser.js'));
+        .pipe(shell([
+            'mkdir -p ' + ENV.tmp,
+            'jison <%= file.path %> -o ' + ENV.tmp + '/parser.js -m js'
+        ]));
 });
 
-gulp.task('build', gulpsync.sync(['jison']));
+gulp.task('browserify', function () {
+    return gulp.src(ENV.src + '/filter.js')
+        .pipe(browserify({
+            insertGlobals: true,
+            debug: false
+        }))
+        .pipe(beautify({ indentSize: 4 }))
+        .pipe(gulp.dest(ENV.release));
+});
+
+gulp.task('concat', function () {
+
+    return gulp.src([
+        ENV.src + '/token.js',
+        ENV.tmp + '/parser.js',
+        ENV.src + '/filter.js'
+    ])
+        .pipe(concat(PROJECT.name + '.js'))
+        .pipe(wrap({
+            src: ENV.src + '/closure.template'
+        }, PROJECT, {
+            variable: 'project'
+        }))
+        .pipe(beautify({ indentSize: 4 }))
+        .pipe(gulp.dest(ENV.release));
+});
+
+gulp.task('build', gulpsync.sync(['jison', 'concat']));

@@ -9,6 +9,7 @@
   "license": "MIT",
   "devDependencies": {
     "gulp": "^3.8.8",
+    "gulp-beautify": "^1.1.0",
     "gulp-browserify": "^0.5.0",
     "gulp-clean": "^0.3.1",
     "gulp-concat": "^2.4.1",
@@ -16,6 +17,7 @@
     "gulp-jison": "^1.0.0",
     "gulp-shell": "^0.2.9",
     "gulp-sync": "^0.1.2",
+    "gulp-uglify": "^1.0.1",
     "gulp-util": "^3.0.1",
     "gulp-wrap": "^0.3.0"
   }

@@ -1,10 +1,10 @@
-module.exports = {
+var Token = {
 
     Identifier: function (id, parent) {
         this.id = id;
         this.parent = parent;
 
-        function property(obj, path) {
+        /*function property(obj, path) {
             if (!path) {
                 return obj;
             }
@@ -12,7 +12,7 @@ module.exports = {
             var prop = obj[key];
             var re = new RegExp('^' + key + '\\.?');
             return property(prop, path.replace(re));
-        }
+        }*/
 
         this.evaluate = function (obj) {
             //return property(obj, this.id);
