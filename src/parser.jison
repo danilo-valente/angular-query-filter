@@ -1,29 +1,35 @@
 %lex
 
-str \"(?:'\\'[\\"bfnrt/]|'\\u'[a-fA-F0-9]{4}|[^\\\0-\x09\x0a-\x1f"])*\"
+key "$"
+id  \w[\w\d_]*
+str \"(?:\\[\"bfnrt/\\]|\\[a-fA-F0-9]{4}|[^\"\\])*\"
 
 %%
 
-\s+                    /* skip whitespace */
-@[0-9]+("."[0-9]+)?\b  return 'NUMBER'
-@str                   return 'STRING'
-@(false|true)          return 'BOOLEAN'
-@(null)                return 'NULL'
-\w[\w\d_]*|str         return 'ID'
-"."                    return 'DOT'
-"&"                    return 'AND'
-"|"                    return 'OR'
-"!="                   return 'DIFF'
-"<="                   return 'LTE'
-">="                   return 'GTE'
-"<"                    return 'LT'
-">"                    return 'GT'
-"!"                    return 'NOT'
-"="                    return 'EQ'
-"("                    return 'LPAR'
-")"                    return 'RPAR'
-<<EOF>>                return 'EOF'
-.                      return 'INVALID'
+\s+                  /* skip whitespace */
+
+"."                  return 'DOT'
+"&"|"&&"|AND         return 'AND'
+"|"|"||"|OR          return 'OR'
+"!="                 return 'DIFF'
+"<="                 return 'LTE'
+">="                 return 'GTE'
+"<"                  return 'LT'
+">"                  return 'GT'
+"!"                  return 'NOT'
+"="                  return 'EQ'
+
+"("                  return 'LPAR'
+")"                  return 'RPAR'
+
+\d+("."\d+)?\b       return 'NUMBER'
+false|true           return 'BOOLEAN'
+null                 return 'NULL'
+{key}({id}|{str})?   return 'ID'
+{id}|{str}           return 'STRING'
+
+<<EOF>>              return 'EOF'
+.                    return 'INVALID'
 
 /lex
 
@@ -37,7 +43,9 @@ str \"(?:'\\'[\\"bfnrt/]|'\\u'[a-fA-F0-9]{4}|[^\\\0-\x09\x0a-\x1f"])*\"
 %%
 
 expressions
-    : e EOF
+    : EOF
+        { return new Token.EmptyQuery(); }
+    | e EOF
         { return $1; }
     ;
 
@@ -63,17 +71,38 @@ e
     | 'LPAR' e 'RPAR'
         { $$ = $2; }
     | 'ID'
-        { $$ = new Token.Identifier($1, null); }
-    | e 'DOT' 'ID' %prec 'DOT'
-        { $$ = new Token.Identifier($3, $1); }
+        {
+            var len = yytext.length;
+            var id = yytext[1] === '"' && yytext[len - 1] === '"'
+                ? yytext.substring(2, yytext.length - 1)
+                : yytext.substring(1);
+            $$ = new Token.Identifier(id);
+        }
     | 'NUMBER'
-        { $$ = new Token.Number(yytext.substr(1)); }
+        { $$ = new Token.Number(yytext); }
     | 'STRING'
-        { $$ = new Token.String(yytext.substr(1, yytext.length - 2)); }
+        {
+            var len = yytext.length;
+            var str = yytext[0] === '"' && yytext[len - 1] === '"'
+                ? yytext.substring(1, yytext.length - 1)
+                : yytext;
+            $$ = new Token.String(str);
+        }
     | 'BOOLEAN'
-        { $$ = new Token.Boolean(yytext.substr(1)); }
+        { $$ = new Token.Boolean(yytext); }
     | 'NULL'
         { $$ = new Token.Null(); }
     ;
 
 %%
+
+function SyntaxError(message, hash) {
+    this.name = 'SyntaxError';
+    this.message = message;
+    this.hash = hash;
+}
+SyntaxError.prototype = Error.prototype;
+
+parser.parseError = function (message, hash) {
+    throw new SyntaxError(message, hash);
+}

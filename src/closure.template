@@ -4,8 +4,6 @@
         throw new Error('<%= project.name %> requires AngularJS');
     }
 
-   'use strict'
-
    <%= project.contents %>
 
    queryFilter.version = '<%= project.version %>';

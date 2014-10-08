@@ -1,22 +1,17 @@
 var Token = {
 
-    Identifier: function (id, parent) {
-        this.id = id;
-        this.parent = parent;
+    EmptyQuery: function () {
+        this.evaluate = function () {
+            return true;
+        };
+    },
 
-        /*function property(obj, path) {
-            if (!path) {
-                return obj;
-            }
-            var key = path.split('.', 1)[0];
-            var prop = obj[key];
-            var re = new RegExp('^' + key + '\\.?');
-            return property(prop, path.replace(re));
-        }*/
+    // TODO: add support to multi-level properties, like 'foo.bar'
+    Identifier: function (id) {
+        this.id = id;
 
         this.evaluate = function (obj) {
-            //return property(obj, this.id);
-            return this.parent ? this.parent[this.id] : obj[this.id];
+            return this.id.length > 0 ? obj[this.id] : obj;
         };
     },
 

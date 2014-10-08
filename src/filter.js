@@ -2,6 +2,9 @@ var ngModule = angular.module('danilovalente.queryFilter', []);
 
 var queryFilter = function () {
     return function (array, query) {
+
+        query = angular.isString(query) ? query : '';
+
         var result = [];
         try {
             var root = parser.parse(query);
@@ -11,8 +14,9 @@ var queryFilter = function () {
                 }
             });
         } catch (ex) {
-            // Do nothing
+            console.error(ex);
         }
+
         return result;
     };
 };

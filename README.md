@@ -1,2 +1,2 @@
-angylar-query-filter
+angular-query-filter
 ====================
