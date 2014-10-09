@@ -7,11 +7,15 @@ var Token = {
     },
 
     // TODO: add support to multi-level properties, like 'foo.bar'
-    Identifier: function (id) {
+    Identifier: function (id, parent) {
         this.id = id;
+        this.parent = parent;
 
         this.evaluate = function (obj) {
-            return this.id.length > 0 ? obj[this.id] : obj;
+            if (this.parent) {
+                obj = this.parent.evaluate(obj);
+            }
+            return angular.isDefined(obj) && obj !== null ? obj[this.id] : obj;
         };
     },
 

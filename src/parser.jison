@@ -35,8 +35,7 @@ null                 return 'NULL'
 
 %left AND OR
 %left EQ DIFF LT LTE GT GTE
-%left NOT
-%left DOT
+%left UNOT DOT
 
 %start expressions
 
@@ -54,7 +53,7 @@ e
         { $$ = new Token.And($1, $3); }
     | e 'OR' e
         { $$ = new Token.Or($1, $3); }
-    | 'NOT' e %prec 'NOT'
+    | 'NOT' e %prec 'UNOT'
         { $$ = new Token.Not($2); }
     | e 'EQ' e
         { $$ = new Token.Equals($1, $3); }
@@ -70,14 +69,8 @@ e
         { $$ = new Token.GreaterThanEquals($1, $3); }
     | 'LPAR' e 'RPAR'
         { $$ = $2; }
-    | 'ID'
-        {
-            var len = yytext.length;
-            var id = yytext[1] === '"' && yytext[len - 1] === '"'
-                ? yytext.substring(2, yytext.length - 1)
-                : yytext.substring(1);
-            $$ = new Token.Identifier(id);
-        }
+    | id
+        { $$ = $1; }}
     | 'NUMBER'
         { $$ = new Token.Number(yytext); }
     | 'STRING'
@@ -92,6 +85,25 @@ e
         { $$ = new Token.Boolean(yytext); }
     | 'NULL'
         { $$ = new Token.Null(); }
+    ;
+
+id
+    : 'ID'
+        {
+            var len = yytext.length;
+            var id = yytext[1] === '"' && yytext[len - 1] === '"'
+                ? yytext.substring(2, yytext.length - 1)
+                : yytext.substring(1);
+            $$ = new Token.Identifier(id, null);
+        }
+    | id 'DOT' 'ID'
+        {
+            var len = $3.length;
+            var id = $3[1] === '"' && $3[len - 1] === '"'
+                ? $3.substring(2, $3.length - 1)
+                : $3.substring(1);
+            $$ = new Token.Identifier(id, $1);
+        }
     ;
 
 %%
