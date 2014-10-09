@@ -16,10 +16,7 @@ var ENV = {
     tmp: '.tmp'
 };
 
-var PROJECT = {
-    name: 'angular-query-filter',
-    version: '0.1.0'
-}
+var PROJECT = require('./bower');
 
 gulp.task('jison', function () {
     return gulp.src(ENV.src + '/parser.jison')

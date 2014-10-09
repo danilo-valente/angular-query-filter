@@ -12,6 +12,7 @@
             };
         },
 
+        // TODO: add support to multi-level properties, like 'foo.bar'
         Identifier: function (id) {
             this.id = id;
 
@@ -1103,6 +1104,6 @@
 
     ngModule.filter('query', queryFilter);
 
-    queryFilter.version = '0.1.0';
+    queryFilter.version = '0.2.0';
 
 })(window.angular);
