@@ -29,7 +29,7 @@ gulp.task('jison', function () {
 gulp.task('concat', function () {
 
     return gulp.src([
-        ENV.src + '/token.js',
+        ENV.src + '/ast.js',
         ENV.tmp + '/parser.js',
         ENV.src + '/filter.js'
     ])

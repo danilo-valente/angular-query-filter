@@ -68,6 +68,15 @@ describe('queryFilter', function () {
             language: 'es',
             single: false,
             employed: true
+        },
+        {
+            id: 8,
+            name: 'Alessandro',
+            age: 33,
+            country: 'Brazil',
+            language: 'pt',
+            single: false,
+            employed: true
         }
     ];
 
@@ -92,14 +101,45 @@ describe('queryFilter', function () {
         var query = '$age >= 18';
         var results = queryFilter(sampleObject, query);
 
-        expect(results.length).toEqual(5);
+        expect(results.length).toEqual(6);
 
         expect(results[0].id).toEqual(1);
         expect(results[1].id).toEqual(2);
         expect(results[2].id).toEqual(3);
         expect(results[3].id).toEqual(6);
         expect(results[4].id).toEqual(7);
+        expect(results[5].id).toEqual(8);
 
+    });
+
+    it('should parse "like" expressions correctly', function () {
+
+        var query = '$name like aless';
+        var results = queryFilter(sampleObject, query);
+
+        expect(results.length).toEqual(2);
+        expect(results[0].id).toEqual(2);
+        expect(results[1].id).toEqual(8);
+    });
+
+    it('should parse "in" expressions correctly', function () {
+
+        var query = '5 in $friends';
+        var results = queryFilter(sampleObject, query);
+
+        expect(results.length).toEqual(2);
+        expect(results[0].id).toEqual(1);
+        expect(results[1].id).toEqual(4);
+    });
+
+    it('should parse "$" as root object', function () {
+
+        var array = [0, 1, null, undefined, 4];
+        var query = '$';
+        var results = queryFilter(array, query);
+
+        expect(results[0]).toEqual(1);
+        expect(results[1]).toEqual(4);
     });
 
     // TODO: Add more test cases

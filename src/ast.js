@@ -1,4 +1,33 @@
-var Token = {
+function lower(obj) {
+    if (angular.isString(obj)) {
+        obj = obj.trim().toLowerCase();
+    }
+    return obj;
+}
+
+function normalize(obj) {
+    obj = lower(obj);
+    if (angular.isString(obj)) {
+        obj = obj
+            .replace(/[áàãâä]/g, 'a')
+            .replace(/[éèẽêë]/g, 'e')
+            .replace(/[íìĩîï]/g, 'i')
+            .replace(/[óòõôö]/g, 'o')
+            .replace(/[úùũûü]/g, 'u')
+            .replace(/[çḉ]/g, 'c')
+            .replace(/^a-zA-Z_]/g, '');
+
+    }
+    return obj;
+}
+
+function like(a, b) {
+    a = normalize(a);
+    b = normalize(b);
+    return a.indexOf(b) !== -1;
+}
+
+var Ast = {
 
     EmptyQuery: function () {
         this.evaluate = function () {
@@ -6,7 +35,6 @@ var Token = {
         };
     },
 
-    // TODO: add support to multi-level properties, like 'foo.bar'
     Identifier: function (id, parent) {
         this.id = id;
         this.parent = parent;
@@ -15,7 +43,13 @@ var Token = {
             if (this.parent) {
                 obj = this.parent.evaluate(obj);
             }
-            return angular.isDefined(obj) && obj !== null ? obj[this.id] : obj;
+
+            if (angular.isUndefined(obj) || obj === null) {
+                return obj;
+            }
+
+            var id = this.id.trim();
+            return id.length > 0 ? obj[id] : obj;
         };
     },
 
@@ -75,12 +109,56 @@ var Token = {
         };
     },
 
+    Like: function (string, pattern) {
+        this.string = string;
+        this.pattern = pattern;
+
+        this.evaluate = function (obj) {
+            return like(this.string.evaluate(obj), this.pattern.evaluate(obj))
+        };
+    },
+
     Equals: function (left, right) {
         this.left = left;
         this.right = right;
 
         this.evaluate = function (obj) {
-            return this.left.evaluate(obj) == this.right.evaluate(obj);
+            var left = lower(this.left.evaluate(obj));
+            var right = lower(this.right.evaluate(obj));
+            return left == right;
+        };
+    },
+
+    Is: function (left, right) {
+        this.left = left;
+        this.right = right;
+
+        this.evaluate = function (obj) {
+            return this.left.evaluate(obj) === this.right.evaluate(obj);
+        };
+    },
+
+    In: function (object, collection) {
+        this.object = object;
+        this.collection = collection;
+
+        this.evaluate = function (obj) {
+            var object = this.object.evaluate(obj);
+            var collection = this.collection.evaluate(obj);
+
+            if (angular.isString(collection)) {
+                return like(collection, object);
+            }
+
+            if (angular.isArray(collection)) {
+                return collection.indexOf(object) !== -1;
+            }
+
+            if (angular.isObject(collection)) {
+                return collection.hasOwnProperty(object);
+            }
+
+            return false;
         };
     },
 

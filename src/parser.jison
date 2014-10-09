@@ -1,5 +1,7 @@
 %lex
 
+%options case-insensitive
+
 key "$"
 id  \w[\w\d_]*
 str \"(?:\\[\"bfnrt/\\]|\\[a-fA-F0-9]{4}|[^\"\\])*\"
@@ -9,15 +11,20 @@ str \"(?:\\[\"bfnrt/\\]|\\[a-fA-F0-9]{4}|[^\"\\])*\"
 \s+                  /* skip whitespace */
 
 "."                  return 'DOT'
+
 "&"|"&&"|AND         return 'AND'
 "|"|"||"|OR          return 'OR'
-"!="                 return 'DIFF'
+
 "<="                 return 'LTE'
 ">="                 return 'GTE'
 "<"                  return 'LT'
 ">"                  return 'GT'
-"!"                  return 'NOT'
+"!="                 return 'DIFF'
+"~="|LIKE            return 'LIKE'
+"=="|IS              return 'IS'
 "="                  return 'EQ'
+IN                   return 'IN'
+"!"                  return 'NOT'
 
 "("                  return 'LPAR'
 ")"                  return 'RPAR'
@@ -34,7 +41,7 @@ null                 return 'NULL'
 /lex
 
 %left AND OR
-%left EQ DIFF LT LTE GT GTE
+%left LTE GTE LT GT DIFF LIKE EQ IS IN
 %left UNOT DOT
 
 %start expressions
@@ -43,48 +50,54 @@ null                 return 'NULL'
 
 expressions
     : EOF
-        { return new Token.EmptyQuery(); }
+        { return new Ast.EmptyQuery(); }
     | e EOF
         { return $1; }
     ;
 
 e
     : e 'AND' e
-        { $$ = new Token.And($1, $3); }
+        { $$ = new Ast.And($1, $3); }
     | e 'OR' e
-        { $$ = new Token.Or($1, $3); }
+        { $$ = new Ast.Or($1, $3); }
     | 'NOT' e %prec 'UNOT'
-        { $$ = new Token.Not($2); }
+        { $$ = new Ast.Not($2); }
+    | e 'LIKE' e
+        { $$ = new Ast.Like($1, $3); }
     | e 'EQ' e
-        { $$ = new Token.Equals($1, $3); }
+        { $$ = new Ast.Equals($1, $3); }
+    | e 'IS' e
+        { $$ = new Ast.Is($1, $3); }
+    | e 'IN' e
+        { $$ = new Ast.In($1, $3); }
     | e 'DIFF' e
-        { $$ = new Token.Differs($1, $3); }
+        { $$ = new Ast.Differs($1, $3); }
     | e 'LT' e
-        { $$ = new Token.LessThan($1, $3); }
+        { $$ = new Ast.LessThan($1, $3); }
     | e 'LTE' e
-        { $$ = new Token.LessThanEquals($1, $3); }
+        { $$ = new Ast.LessThanEquals($1, $3); }
     | e 'GT' e
-        { $$ = new Token.GreaterThan($1, $3); }
+        { $$ = new Ast.GreaterThan($1, $3); }
     | e 'GTE' e
-        { $$ = new Token.GreaterThanEquals($1, $3); }
+        { $$ = new Ast.GreaterThanEquals($1, $3); }
     | 'LPAR' e 'RPAR'
         { $$ = $2; }
     | id
         { $$ = $1; }}
     | 'NUMBER'
-        { $$ = new Token.Number(yytext); }
+        { $$ = new Ast.Number(yytext); }
     | 'STRING'
         {
             var len = yytext.length;
             var str = yytext[0] === '"' && yytext[len - 1] === '"'
                 ? yytext.substring(1, yytext.length - 1)
                 : yytext;
-            $$ = new Token.String(str);
+            $$ = new Ast.String(str);
         }
     | 'BOOLEAN'
-        { $$ = new Token.Boolean(yytext); }
+        { $$ = new Ast.Boolean(yytext.toLowerCase() === 'true'); }
     | 'NULL'
-        { $$ = new Token.Null(); }
+        { $$ = new Ast.Null(); }
     ;
 
 id
@@ -94,7 +107,7 @@ id
             var id = yytext[1] === '"' && yytext[len - 1] === '"'
                 ? yytext.substring(2, yytext.length - 1)
                 : yytext.substring(1);
-            $$ = new Token.Identifier(id, null);
+            $$ = new Ast.Identifier(id, null);
         }
     | id 'DOT' 'ID'
         {
@@ -102,7 +115,7 @@ id
             var id = $3[1] === '"' && $3[len - 1] === '"'
                 ? $3.substring(2, $3.length - 1)
                 : $3.substring(1);
-            $$ = new Token.Identifier(id, $1);
+            $$ = new Ast.Identifier(id, $1);
         }
     ;
 
