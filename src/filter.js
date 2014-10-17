@@ -1,12 +1,24 @@
 var ngModule = angular.module('danilovalente.queryFilter', []);
 
 var queryFilter = function () {
-    return function (array, query) {
+
+    this.lexers = lexers;
+
+    this.getParser = function (grammar) {
+        var p = new ParserFactory.Parser();
+        p.lexer = lexers[grammar] || defaultLexer;
+        return p;
+    };
+
+    var self = this;
+    return function (array, query, options) {
+        options = options || {};
 
         query = angular.isString(query) ? query : '';
 
         var result = [];
         try {
+            var parser = self.getParser(options.grammar);
             var root = parser.parse(query);
             angular.forEach(array, function (obj) {
                 if (root.evaluate(obj)) {

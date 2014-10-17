@@ -1,53 +1,65 @@
 var gulp = require('gulp');
-var gulpsync = require('gulp-sync')(gulp);
-var clean = require('gulp-clean');
 var rename = require('gulp-rename');
-var shell = require('gulp-shell');
 var jison = require('gulp-jison');
+var jisonLex = require('gulp-jison-lex');
 var concat = require('gulp-concat');
 var wrap = require('gulp-wrap');
 var beautify = require('gulp-beautify');
 var uglify = require('gulp-uglify');
 var karma = require('karma').server;
 
-var ENV = {
+var PATH = {
     src: 'src',
     release: 'release',
-    tmp: '.tmp'
+    tmp: '.tmp',
+    grammar: 'grammar'
 };
 
 var PROJECT = require('./bower');
 
+gulp.task('jisonlex', function () {
+    return gulp.src(PATH.src + '/' + PATH.grammar + '/**.jisonlex')
+        .pipe(jisonLex({
+            outFile: '<%= path.basename %>.js',
+            moduleName: '<%= path.basename %>Lexer',
+            moduleType: 'js'
+        }))
+        .pipe(gulp.dest(PATH.tmp + '/' + PATH.grammar));
+});
+
 gulp.task('jison', function () {
-    return gulp.src(ENV.src + '/parser.jison')
-        .pipe(shell([
-            'mkdir -p ' + ENV.tmp,
-            'jison <%= file.path %> -o ' + ENV.tmp + '/parser.js -m js'
-        ]));
+    return gulp.src(PATH.src + '/parser.jison')
+        .pipe(jison({
+            moduleName: 'ParserFactory',
+            moduleType: 'js'
+        }))
+        .pipe(gulp.dest(PATH.tmp));
 });
 
 gulp.task('concat', function () {
 
     return gulp.src([
-        ENV.src + '/ast.js',
-        ENV.tmp + '/parser.js',
-        ENV.src + '/filter.js'
+        PATH.src + '/vars.js',
+        PATH.src + '/ast.js',
+        PATH.tmp + '/grammar/*.js',
+        PATH.tmp + '/parser.js',
+        PATH.src + '/filter.js'
     ])
         .pipe(concat(PROJECT.name + '.js'))
         .pipe(wrap({
-            src: ENV.src + '/closure.template'
+            src: PATH.src + '/module.template'
         }, PROJECT, {
             variable: 'project'
         }))
         .pipe(beautify())
-        .pipe(gulp.dest(ENV.release));
+        .pipe(gulp.dest(PATH.release));
 });
 
 gulp.task('minify', function () {
-    return gulp.src(ENV.release + '/' + PROJECT.name + '.js')
+    return gulp.src(PATH.release + '/' + PROJECT.name + '.js')
         .pipe(rename(PROJECT.name + '.min.js'))
         .pipe(uglify())
-        .pipe(gulp.dest(ENV.release));
+        .pipe(gulp.dest(PATH.release));
 });
 
 gulp.task('test', function (done) {
@@ -58,7 +70,3 @@ gulp.task('test', function (done) {
 });
 
 // TODO: Add 'bump' task
-
-// gulp.task('build', gulpsync.sync(['jison', 'concat']));
-
-// gulp.task('release', gulpsync.sync(['build', 'test']));

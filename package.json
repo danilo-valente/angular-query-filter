@@ -10,20 +10,20 @@
   "devDependencies": {
     "gulp": "^3.8.8",
     "gulp-beautify": "^1.1.0",
-    "gulp-clean": "^0.3.1",
     "gulp-concat": "^2.4.1",
-    "gulp-copy": "0.0.2",
     "gulp-jison": "^1.0.0",
+    "gulp-jison-lex": "^1.1.0",
     "gulp-karma": "0.0.4",
     "gulp-rename": "^1.2.0",
-    "gulp-shell": "^0.2.9",
     "gulp-sync": "^0.1.2",
     "gulp-uglify": "^1.0.1",
     "gulp-util": "^3.0.1",
     "gulp-wrap": "^0.3.0",
+    "jison": "^0.4.15",
     "karma": "^0.12.24",
     "karma-coverage": "^0.2.6",
     "karma-jasmine": "^0.1.5",
-    "karma-phantomjs-launcher": "^0.1.4"
+    "karma-phantomjs-launcher": "^0.1.4",
+    "lex-parser": "^0.1.4"
   }
 }
