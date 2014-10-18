@@ -65,7 +65,7 @@ id
             var id = yytext[1] === '"' && yytext[len - 1] === '"'
                 ? yytext.substring(2, yytext.length - 1)
                 : yytext.substring(1);
-            $$ = new Ast.Identifier(id, null);
+            $$ = new Ast.Identifier(id, null, yy.caseInsensitive);
         }
     | id 'DOT' 'ID'
         {
@@ -73,7 +73,7 @@ id
             var id = $3[1] === '"' && $3[len - 1] === '"'
                 ? $3.substring(2, $3.length - 1)
                 : $3.substring(1);
-            $$ = new Ast.Identifier(id, $1);
+            $$ = new Ast.Identifier(id, $1, yy.caseInsensitive);
         }
     ;
 
@@ -87,5 +87,9 @@ function SyntaxError(message, hash) {
 SyntaxError.prototype = Error.prototype;
 
 parser.parseError = function (message, hash) {
-    throw new SyntaxError(message, hash);
-}
+    if (hash.recoverable) {
+        this.trace(str);
+    } else {
+        throw new SyntaxError(message, hash);
+    }
+};

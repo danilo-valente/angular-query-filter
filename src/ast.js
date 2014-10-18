@@ -35,21 +35,31 @@ var Ast = {
         };
     },
 
-    Identifier: function (id, parent) {
+    Identifier: function (id, parent, caseInsensitive) {
         this.id = id;
         this.parent = parent;
+        this.caseInsensitive = caseInsensitive;
 
         this.evaluate = function (obj) {
             if (this.parent) {
                 obj = this.parent.evaluate(obj);
             }
 
-            if (angular.isUndefined(obj) || obj === null) {
+            if (angular.isUndefined(obj) || obj === null || !this.id) {
                 return obj;
             }
 
-            var id = this.id.trim();
-            return id.length > 0 ? obj[id] : obj;
+            if (!this.caseInsensitive) {
+                return obj[this.id];
+            }
+
+            for (var key in obj) {
+                if (key.toLowerCase() === this.id.toLowerCase()) {
+                    return obj[key];
+                }
+            }
+
+            return null;
         };
     },
 

@@ -8,7 +8,7 @@ describe('queryFilter', function () {
             name: 'Danilo',
             age: 18,
             country: 'Brazil',
-            locale: 'pt',
+            language: 'pt',
             single: true,
             employed: true,
             friends: [3, 5, 6]
@@ -140,6 +140,30 @@ describe('queryFilter', function () {
 
         expect(results[0]).toEqual(1);
         expect(results[1]).toEqual(4);
+    });
+
+    it('should handle syntax errors', function () {
+
+        var error = null;
+        var query = ')(';
+        queryFilter([], query, {
+            errorHandler: function (err) {
+                error = err;
+            }
+        });
+
+        expect(error).not.toBeNull();
+        expect(error.hash).not.toBeNull();
+    });
+
+    it('should be case insensitive', function () {
+
+        var query = '$NAME = Danilo';
+        var results = queryFilter(sampleObject, query, {
+            caseInsensitive: true
+        });
+
+        expect(results.length).toEqual(1);
     });
 
     // TODO: Add more test cases

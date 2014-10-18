@@ -6,6 +6,4 @@
 
    <%= project.contents %>
 
-   queryFilter.version = '<%= project.version %>';
-
 })(window.angular);

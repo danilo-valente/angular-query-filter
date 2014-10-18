@@ -1,32 +1,48 @@
 var ngModule = angular.module('danilovalente.queryFilter', []);
 
+/*
+ * queryFilterConfig
+ */
+var config = {
+    defaultGrammar: 'default',
+    caseInsensitive: false,
+    errorHandler: angular.noop
+};
+
+ngModule.value('queryFilterConfig', config);
+
+/*
+ * queryFilter
+ */
 var queryFilter = function () {
 
-    this.lexers = lexers;
+    function $$parser(options) {
+        parser.lexer = lexers[options.grammar] || lexers[config.defaultGrammar];
+        parser.yy.caseInsensitive = options.caseInsensitive || config.caseInsensitive;
+        return parser;
+    }
 
-    this.getParser = function (grammar) {
-        var p = new ParserFactory.Parser();
-        p.lexer = lexers[grammar] || defaultLexer;
-        return p;
+    this.addGrammar = function (name, lexer) {
+        this.lexers[name] = lexer;
     };
 
-    var self = this;
     return function (array, query, options) {
         options = options || {};
 
-        query = angular.isString(query) ? query : '';
-
         var result = [];
+        var parser = $$parser(options);
+        var root;
+
         try {
-            var parser = self.getParser(options.grammar);
-            var root = parser.parse(query);
+            root = parser.parse(angular.isString(query) ? query : '');
+
             angular.forEach(array, function (obj) {
                 if (root.evaluate(obj)) {
                     result.push(obj);
                 }
             });
-        } catch (ex) {
-            console.error(ex);
+        } catch (err) {
+            (options.errorHandler || config.errorHandler)(err);
         }
 
         return result;

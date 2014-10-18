@@ -30,7 +30,7 @@ gulp.task('jisonlex', function () {
 gulp.task('jison', function () {
     return gulp.src(PATH.src + '/parser.jison')
         .pipe(jison({
-            moduleName: 'ParserFactory',
+            moduleName: 'parser',
             moduleType: 'js'
         }))
         .pipe(gulp.dest(PATH.tmp));
