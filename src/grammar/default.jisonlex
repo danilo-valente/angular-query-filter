@@ -30,8 +30,22 @@ IN                   return 'IN'
 \d+("."\d+)?\b       return 'NUMBER'
 false|true           return 'BOOLEAN'
 null                 return 'NULL'
-{key}({id}|{str})?   return 'ID'
-{id}|{str}           return 'STRING'
+{key}({id}|{str})?   {
+                         var t = yytext;
+                         var len = t.length;
+                         yytext = t[1] === '"' && t[len - 1] === '"'
+                             ? t.substring(2, len - 1)
+                             : t.substring(1);
+                         return 'ID';
+                     }
+{id}|{str}           {
+                         var t = yytext;
+                         var len = t.length;
+                         yytext = t[0] === '"' && t[len - 1] === '"'
+                             ? t.substring(1, len - 1)
+                             : t;
+                         return 'STRING';
+                     }
 
 <<EOF>>              return 'EOF'
 .                    return 'INVALID'

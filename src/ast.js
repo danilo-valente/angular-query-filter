@@ -63,33 +63,11 @@ var Ast = {
         };
     },
 
-    Number: function (value) {
-        this.value = Number(value);
+    Primitive: function (value) {
+        this.value = value;
 
-        this.evaluate = function () {
+        this.evaluate = function (obj) {
             return this.value;
-        };
-    },
-
-    String: function (value) {
-        this.value = String(value);
-
-        this.evaluate = function () {
-            return this.value;
-        };
-    },
-
-    Boolean: function (value) {
-        this.value = Boolean(value);
-
-        this.evaluate = function () {
-            return this.value;
-        };
-    },
-
-    Null: function () {
-        this.evaluate = function () {
-            return null;
         };
     },
 

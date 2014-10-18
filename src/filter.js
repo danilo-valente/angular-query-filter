@@ -1,4 +1,6 @@
-var ngModule = angular.module('danilovalente.queryFilter', []);
+var ngModule = angular.module('danilovalente.queryFilter', [
+    'ng'
+]);
 
 /*
  * queryFilterConfig
@@ -14,7 +16,7 @@ ngModule.value('queryFilterConfig', config);
 /*
  * queryFilter
  */
-var queryFilter = function () {
+var queryFilter = function (filterFilter) {
 
     function $$parser(options) {
         parser.lexer = lexers[options.grammar] || lexers[config.defaultGrammar];
@@ -36,11 +38,16 @@ var queryFilter = function () {
         try {
             root = parser.parse(angular.isString(query) ? query : '');
 
-            angular.forEach(array, function (obj) {
-                if (root.evaluate(obj)) {
-                    result.push(obj);
-                }
-            });
+            if (root instanceof Ast.Primitive) {
+                result = filterFilter(array, root.value);
+            } else {
+                angular.forEach(array, function (obj) {
+                    if (root.evaluate(obj)) {
+                        result.push(obj);
+                    }
+                });
+            }
+
         } catch (err) {
             (options.errorHandler || config.errorHandler)(err);
         }
@@ -48,5 +55,6 @@ var queryFilter = function () {
         return result;
     };
 };
+queryFilter.$inject = ['filterFilter'];
 
 ngModule.filter('query', queryFilter);

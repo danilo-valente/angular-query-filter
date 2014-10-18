@@ -64,33 +64,11 @@
             };
         },
 
-        Number: function (value) {
-            this.value = Number(value);
+        Primitive: function (value) {
+            this.value = value;
 
-            this.evaluate = function () {
+            this.evaluate = function (obj) {
                 return this.value;
-            };
-        },
-
-        String: function (value) {
-            this.value = String(value);
-
-            this.evaluate = function () {
-                return this.value;
-            };
-        },
-
-        Boolean: function (value) {
-            this.value = Boolean(value);
-
-            this.evaluate = function () {
-                return this.value;
-            };
-        },
-
-        Null: function () {
-            this.evaluate = function () {
-                return null;
             };
         },
 
@@ -597,10 +575,18 @@
                     return 'NULL'
                     break;
                 case 19:
-                    return 'ID'
+                    var t = yy_.yytext;
+                    var len = t.length;
+                    yy_.yytext = t[1] === '"' && t[len - 1] === '"' ? t.substring(2, len - 1) : t.substring(1);
+                    return 'ID';
+
                     break;
                 case 20:
-                    return 'STRING'
+                    var t = yy_.yytext;
+                    var len = t.length;
+                    yy_.yytext = t[0] === '"' && t[len - 1] === '"' ? t.substring(1, len - 1) : t;
+                    return 'STRING';
+
                     break;
                 case 21:
                     return 'EOF'
@@ -851,34 +837,22 @@
                     this.$ = $$[$0];
                     break;
                 case 17:
-                    this.$ = new Ast.Number(yytext);
+                    this.$ = new Ast.Primitive(Number(yytext));
                     break;
                 case 18:
-
-                    var len = yytext.length;
-                    var str = yytext[0] === '"' && yytext[len - 1] === '"' ? yytext.substring(1, yytext.length - 1) : yytext;
-                    this.$ = new Ast.String(str);
-
+                    this.$ = new Ast.Primitive(String(yytext));
                     break;
                 case 19:
-                    this.$ = new Ast.Boolean(yytext.toLowerCase() === 'true');
+                    this.$ = new Ast.Primitive(Boolean(yytext.toLowerCase() === 'true'));
                     break;
                 case 20:
-                    this.$ = new Ast.Null();
+                    this.$ = new Ast.Primitive(null);
                     break;
                 case 21:
-
-                    var len = yytext.length;
-                    var id = yytext[1] === '"' && yytext[len - 1] === '"' ? yytext.substring(2, yytext.length - 1) : yytext.substring(1);
-                    this.$ = new Ast.Identifier(id, null, yy.caseInsensitive);
-
+                    this.$ = new Ast.Identifier(yytext, null, yy.caseInsensitive);
                     break;
                 case 22:
-
-                    var len = $$[$0].length;
-                    var id = $$[$0][1] === '"' && $$[$0][len - 1] === '"' ? $$[$0].substring(2, $$[$0].length - 1) : $$[$0].substring(1);
-                    this.$ = new Ast.Identifier(id, $$[$0 - 2], yy.caseInsensitive);
-
+                    this.$ = new Ast.Identifier(yytext, $$[$0 - 2], yy.caseInsensitive);
                     break;
                 }
             },
@@ -1281,7 +1255,7 @@
         parser.Parser = Parser;
         return new Parser;
     })();
-    var ngModule = angular.module('danilovalente.queryFilter', []);
+    var ngModule = angular.module('danilovalente.queryFilter', ['ng']);
 
 /*
  * queryFilterConfig
@@ -1297,7 +1271,7 @@
 /*
  * queryFilter
  */
-    var queryFilter = function () {
+    var queryFilter = function (filterFilter) {
 
         function $$parser(options) {
             parser.lexer = lexers[options.grammar] || lexers[config.defaultGrammar];
@@ -1319,11 +1293,16 @@
             try {
                 root = parser.parse(angular.isString(query) ? query : '');
 
-                angular.forEach(array, function (obj) {
-                    if (root.evaluate(obj)) {
-                        result.push(obj);
-                    }
-                });
+                if (root instanceof Ast.Primitive) {
+                    result = filterFilter(array, root.value);
+                } else {
+                    angular.forEach(array, function (obj) {
+                        if (root.evaluate(obj)) {
+                            result.push(obj);
+                        }
+                    });
+                }
+
             } catch (err) {
                 (options.errorHandler || config.errorHandler)(err);
             }
@@ -1331,6 +1310,7 @@
             return result;
         };
     };
+    queryFilter.$inject = ['filterFilter'];
 
     ngModule.filter('query', queryFilter);
 

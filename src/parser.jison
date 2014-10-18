@@ -43,38 +43,20 @@ e
     | id
         { $$ = $1; }}
     | 'NUMBER'
-        { $$ = new Ast.Number(yytext); }
+        { $$ = new Ast.Primitive(Number(yytext)); }
     | 'STRING'
-        {
-            var len = yytext.length;
-            var str = yytext[0] === '"' && yytext[len - 1] === '"'
-                ? yytext.substring(1, yytext.length - 1)
-                : yytext;
-            $$ = new Ast.String(str);
-        }
+        { $$ = new Ast.Primitive(String(yytext)); }
     | 'BOOLEAN'
-        { $$ = new Ast.Boolean(yytext.toLowerCase() === 'true'); }
+        { $$ = new Ast.Primitive(Boolean(yytext.toLowerCase() === 'true')); }
     | 'NULL'
-        { $$ = new Ast.Null(); }
+        { $$ = new Ast.Primitive(null); }
     ;
 
 id
     : 'ID'
-        {
-            var len = yytext.length;
-            var id = yytext[1] === '"' && yytext[len - 1] === '"'
-                ? yytext.substring(2, yytext.length - 1)
-                : yytext.substring(1);
-            $$ = new Ast.Identifier(id, null, yy.caseInsensitive);
-        }
+        { $$ = new Ast.Identifier(yytext, null, yy.caseInsensitive); }
     | id 'DOT' 'ID'
-        {
-            var len = $3.length;
-            var id = $3[1] === '"' && $3[len - 1] === '"'
-                ? $3.substring(2, $3.length - 1)
-                : $3.substring(1);
-            $$ = new Ast.Identifier(id, $1, yy.caseInsensitive);
-        }
+        { $$ = new Ast.Identifier(yytext, $1, yy.caseInsensitive); }
     ;
 
 %%
