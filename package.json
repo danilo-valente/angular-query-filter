@@ -1,10 +1,14 @@
 {
   "name": "angular-query-filter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Easily query objects lists",
   "author": {
     "name": "Danilo Valente",
     "email": "danilovalente96@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/danilo-valente/angular-query-filter.git"
   },
   "license": "MIT",
   "devDependencies": {
