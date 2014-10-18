@@ -166,6 +166,25 @@ describe('queryFilter', function () {
         expect(results.length).toEqual(1);
     });
 
+    it('should perform operation \'equals\' with arrays', function () {
+
+        var query = '$friends = [3, 5, 6] || $friends = [5]';
+        var results = queryFilter(sampleObject, query);
+
+        expect(results.length).toEqual(2);
+        expect(results[0].id).toEqual(1);
+        expect(results[1].id).toEqual(4);
+    });
+
+    it('should perform operation \'in\' between a number and an array', function () {
+
+        var query = '4 in $friends';
+        var results = queryFilter(sampleObject, query);
+
+        expect(results.length).toEqual(1);
+        expect(results[0].id).toEqual(5);
+    });
+
     // TODO: Add more test cases
 
 });

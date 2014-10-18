@@ -6,49 +6,53 @@ str \"(?:\\[\"bfnrt/\\]|\\[a-f0-9]{4}|[^\"\\])*\"
 
 %%
 
-\s+                  /* skip whitespace */
+\s+                 /* skip whitespace */
 
-"."                  return 'DOT'
+"."                 return 'DOT'
 
-"&"|"&&"|AND         return 'AND'
-"|"|"||"|OR          return 'OR'
+"&&"|"&"|AND        return 'AND'
+"||"|"|"|OR         return 'OR'
 
-"<="                 return 'LTE'
-">="                 return 'GTE'
-"<"                  return 'LT'
-">"                  return 'GT'
-"!="                 return 'DIFF'
-"~="|LIKE            return 'LIKE'
-"=="|IS              return 'IS'
-"="                  return 'EQ'
-IN                   return 'IN'
-"!"                  return 'NOT'
+"<="                return 'LTE'
+">="                return 'GTE'
+"<"                 return 'LT'
+">"                 return 'GT'
+"!="                return 'DIFF'
+"~="|LIKE           return 'LIKE'
+"=="|IS             return 'IS'
+"="                 return 'EQ'
+IN                  return 'IN'
+"!"                 return 'NOT'
 
-"("                  return 'LPAR'
-")"                  return 'RPAR'
+"("                 return 'START_EXPR'
+")"                 return 'END_EXPR'
 
-\d+("."\d+)?\b       return 'NUMBER'
-false|true           return 'BOOLEAN'
-null                 return 'NULL'
-{key}({id}|{str})?   {
-                         var t = yytext;
-                         var len = t.length;
-                         yytext = t[1] === '"' && t[len - 1] === '"'
-                             ? t.substring(2, len - 1)
-                             : t.substring(1);
-                         return 'ID';
-                     }
-{id}|{str}           {
-                         var t = yytext;
-                         var len = t.length;
-                         yytext = t[0] === '"' && t[len - 1] === '"'
-                             ? t.substring(1, len - 1)
-                             : t;
-                         return 'STRING';
-                     }
+"["                 return 'START_ARR'
+"]"                 return 'END_ARR'
+","                 return 'ITEM_DLM'
 
-<<EOF>>              return 'EOF'
-.                    return 'INVALID'
+\d+("."\d+)?\b      return 'NUMBER'
+false|true          return 'BOOLEAN'
+null                return 'NULL'
+{key}({id}|{str})?  {
+                        var t = yytext;
+                        var len = t.length;
+                        yytext = t[1] === '"' && t[len - 1] === '"'
+                            ? t.substring(2, len - 1)
+                            : t.substring(1);
+                        return 'ID';
+                    }
+{id}|{str}          {
+                        var t = yytext;
+                        var len = t.length;
+                        yytext = t[0] === '"' && t[len - 1] === '"'
+                            ? t.substring(1, len - 1)
+                            : t;
+                        return 'STRING';
+                    }
+
+<<EOF>>             return 'EOF'
+.                   return 'INVALID'
 
 %%
 

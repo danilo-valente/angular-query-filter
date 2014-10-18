@@ -41,7 +41,14 @@ e
     | 'LPAR' e 'RPAR'
         { $$ = $2; }
     | id
-        { $$ = $1; }}
+        { $$ = $1; }
+    | primitive
+        { $$ = $1; }
+    ;
+
+primitive
+    : array
+        { $$ = new Ast.Primitive($1); }
     | 'NUMBER'
         { $$ = new Ast.Primitive(Number(yytext)); }
     | 'STRING'
@@ -50,6 +57,20 @@ e
         { $$ = new Ast.Primitive(Boolean(yytext.toLowerCase() === 'true')); }
     | 'NULL'
         { $$ = new Ast.Primitive(null); }
+    ;
+
+array_items
+    : primitive
+        { $$ = [$1]; }
+    | array_items ITEM_DLM primitive
+        { $$.push($3); }
+    ;
+
+array
+    : 'START_ARR' 'END_ARR'
+        { $$ = new Ast.Array([]); }
+    | 'START_ARR' array_items 'END_ARR'
+        { $$ = new Ast.Array($2); }
     ;
 
 id

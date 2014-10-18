@@ -6,6 +6,10 @@
 
     var lexers = {};
 
+    function isToken(obj) {
+        return obj && angular.isFunction(obj.evaluate);
+    }
+
     function lower(obj) {
         if (angular.isString(obj)) {
             obj = obj.trim().toLowerCase();
@@ -28,6 +32,27 @@
         return a.indexOf(b) !== -1;
     }
 
+    function equals(a, b) {
+        if (angular.isArray(a) && angular.isArray(b)) {
+            var len = a.length;
+            if (len !== b.length) {
+                return false;
+            }
+
+            var i;
+            for (i = 0; i < len; i++) {
+                if (a[i] != b[i]) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return a == b;
+    }
+
+    // TODO: Improve operators logic
     var Ast = {
 
         EmptyQuery: function () {
@@ -46,7 +71,11 @@
                     obj = this.parent.evaluate(obj);
                 }
 
-                if (angular.isUndefined(obj) || obj === null || !this.id) {
+                if (angular.isUndefined(obj) || obj === null) {
+                    return null;
+                }
+
+                if (!this.id) {
                     return obj;
                 }
 
@@ -64,11 +93,25 @@
             };
         },
 
+        Array: function (items) {
+            this.items = items;
+
+            this.evaluate = function (obj) {
+                var items = [];
+                angular.forEach(this.items, function (item) {
+                    var value = isToken(item) ? item.evaluate(obj) : item;
+                    items.push(value);
+                });
+
+                return items;
+            };
+        },
+
         Primitive: function (value) {
             this.value = value;
 
             this.evaluate = function (obj) {
-                return this.value;
+                return isToken(this.value) ? this.value.evaluate(obj) : this.value;
             };
         },
 
@@ -114,7 +157,7 @@
             this.evaluate = function (obj) {
                 var left = lower(this.left.evaluate(obj));
                 var right = lower(this.right.evaluate(obj));
-                return left == right;
+                return equals(left, right);
             };
         },
 
@@ -560,46 +603,55 @@
                     return 'NOT'
                     break;
                 case 14:
-                    return 'LPAR'
+                    return 'START_EXPR'
                     break;
                 case 15:
-                    return 'RPAR'
+                    return 'END_EXPR'
                     break;
                 case 16:
-                    return 'NUMBER'
+                    return 'START_ARR'
                     break;
                 case 17:
-                    return 'BOOLEAN'
+                    return 'END_ARR'
                     break;
                 case 18:
-                    return 'NULL'
+                    return 'ITEM_DLM'
                     break;
                 case 19:
+                    return 'NUMBER'
+                    break;
+                case 20:
+                    return 'BOOLEAN'
+                    break;
+                case 21:
+                    return 'NULL'
+                    break;
+                case 22:
                     var t = yy_.yytext;
                     var len = t.length;
                     yy_.yytext = t[1] === '"' && t[len - 1] === '"' ? t.substring(2, len - 1) : t.substring(1);
                     return 'ID';
 
                     break;
-                case 20:
+                case 23:
                     var t = yy_.yytext;
                     var len = t.length;
                     yy_.yytext = t[0] === '"' && t[len - 1] === '"' ? t.substring(1, len - 1) : t;
                     return 'STRING';
 
                     break;
-                case 21:
+                case 24:
                     return 'EOF'
                     break;
-                case 22:
+                case 25:
                     return 'INVALID'
                     break;
                 }
             },
-            rules: [/^(?:\s+)/i, /^(?:\.)/i, /^(?:&|&&|AND\b)/i, /^(?:\||\|\||OR\b)/i, /^(?:<=)/i, /^(?:>=)/i, /^(?:<)/i, /^(?:>)/i, /^(?:!=)/i, /^(?:~=|LIKE\b)/i, /^(?:==|IS\b)/i, /^(?:=)/i, /^(?:IN\b)/i, /^(?:!)/i, /^(?:\()/i, /^(?:\))/i, /^(?:\d+(\.\d+)?\b)/i, /^(?:false|true\b)/i, /^(?:null\b)/i, /^(?:(\$)((\w[\w\d_]*)|("(?:\\[\"bfnrt/\\]|\\[a-f0-9]{4}|[^\"\\])*"))?)/i, /^(?:(\w[\w\d_]*)|("(?:\\[\"bfnrt/\\]|\\[a-f0-9]{4}|[^\"\\])*"))/i, /^(?:$)/i, /^(?:.)/i],
+            rules: [/^(?:\s+)/i, /^(?:\.)/i, /^(?:&&|&|AND\b)/i, /^(?:\|\||\||OR\b)/i, /^(?:<=)/i, /^(?:>=)/i, /^(?:<)/i, /^(?:>)/i, /^(?:!=)/i, /^(?:~=|LIKE\b)/i, /^(?:==|IS\b)/i, /^(?:=)/i, /^(?:IN\b)/i, /^(?:!)/i, /^(?:\()/i, /^(?:\))/i, /^(?:\[)/i, /^(?:\])/i, /^(?:,)/i, /^(?:\d+(\.\d+)?\b)/i, /^(?:false|true\b)/i, /^(?:null\b)/i, /^(?:(\$)((\w[\w\d_]*)|("(?:\\[\"bfnrt/\\]|\\[a-f0-9]{4}|[^\"\\])*"))?)/i, /^(?:(\w[\w\d_]*)|("(?:\\[\"bfnrt/\\]|\\[a-f0-9]{4}|[^\"\\])*"))/i, /^(?:$)/i, /^(?:.)/i],
             conditions: {
                 "INITIAL": {
-                    "rules": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+                    "rules": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
                     "inclusive": true
                 }
             }
@@ -686,25 +738,28 @@
         },
             $V0 = [1, 4],
             $V1 = [1, 5],
-            $V2 = [1, 7],
-            $V3 = [1, 8],
-            $V4 = [1, 9],
-            $V5 = [1, 10],
-            $V6 = [1, 11],
-            $V7 = [1, 13],
-            $V8 = [1, 14],
-            $V9 = [1, 15],
-            $Va = [1, 16],
-            $Vb = [1, 17],
-            $Vc = [1, 18],
-            $Vd = [1, 19],
-            $Ve = [1, 20],
-            $Vf = [1, 21],
-            $Vg = [1, 22],
-            $Vh = [1, 23],
-            $Vi = [4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19],
-            $Vj = [4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 26],
-            $Vk = [4, 6, 7, 19];
+            $V2 = [1, 10],
+            $V3 = [1, 11],
+            $V4 = [1, 12],
+            $V5 = [1, 13],
+            $V6 = [1, 14],
+            $V7 = [1, 8],
+            $V8 = [1, 16],
+            $V9 = [1, 17],
+            $Va = [1, 18],
+            $Vb = [1, 19],
+            $Vc = [1, 20],
+            $Vd = [1, 21],
+            $Ve = [1, 22],
+            $Vf = [1, 23],
+            $Vg = [1, 24],
+            $Vh = [1, 25],
+            $Vi = [1, 26],
+            $Vj = [4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19],
+            $Vk = [4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 32],
+            $Vl = [4, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 28, 30],
+            $Vm = [28, 30],
+            $Vn = [4, 6, 7, 19];
         var parser = {
             trace: function trace() {},
             yy: {},
@@ -728,12 +783,18 @@
                 "LPAR": 18,
                 "RPAR": 19,
                 "id": 20,
-                "NUMBER": 21,
-                "STRING": 22,
-                "BOOLEAN": 23,
-                "NULL": 24,
-                "ID": 25,
-                "DOT": 26,
+                "primitive": 21,
+                "array": 22,
+                "NUMBER": 23,
+                "STRING": 24,
+                "BOOLEAN": 25,
+                "NULL": 26,
+                "array_items": 27,
+                "ITEM_DLM": 28,
+                "START_ARR": 29,
+                "END_ARR": 30,
+                "ID": 31,
+                "DOT": 32,
                 "$accept": 0,
                 "$end": 1
             },
@@ -754,12 +815,15 @@
                 17: "GTE",
                 18: "LPAR",
                 19: "RPAR",
-                21: "NUMBER",
-                22: "STRING",
-                23: "BOOLEAN",
-                24: "NULL",
-                25: "ID",
-                26: "DOT"
+                23: "NUMBER",
+                24: "STRING",
+                25: "BOOLEAN",
+                26: "NULL",
+                28: "ITEM_DLM",
+                29: "START_ARR",
+                30: "END_ARR",
+                31: "ID",
+                32: "DOT"
             },
             productions_: [0, [3, 1],
                 [3, 2],
@@ -778,9 +842,15 @@
                 [5, 3],
                 [5, 1],
                 [5, 1],
-                [5, 1],
-                [5, 1],
-                [5, 1],
+                [21, 1],
+                [21, 1],
+                [21, 1],
+                [21, 1],
+                [21, 1],
+                [27, 1],
+                [27, 3],
+                [22, 2],
+                [22, 3],
                 [20, 1],
                 [20, 3]
             ],
@@ -834,24 +904,40 @@
                     this.$ = $$[$0 - 1];
                     break;
                 case 16:
+                case 17:
                     this.$ = $$[$0];
                     break;
-                case 17:
-                    this.$ = new Ast.Primitive(Number(yytext));
-                    break;
                 case 18:
-                    this.$ = new Ast.Primitive(String(yytext));
+                    this.$ = new Ast.Primitive($$[$0]);
                     break;
                 case 19:
-                    this.$ = new Ast.Primitive(Boolean(yytext.toLowerCase() === 'true'));
+                    this.$ = new Ast.Primitive(Number(yytext));
                     break;
                 case 20:
-                    this.$ = new Ast.Primitive(null);
+                    this.$ = new Ast.Primitive(String(yytext));
                     break;
                 case 21:
-                    this.$ = new Ast.Identifier(yytext, null, yy.caseInsensitive);
+                    this.$ = new Ast.Primitive(Boolean(yytext.toLowerCase() === 'true'));
                     break;
                 case 22:
+                    this.$ = new Ast.Primitive(null);
+                    break;
+                case 23:
+                    this.$ = [$$[$0]];
+                    break;
+                case 24:
+                    this.$.push($$[$0]);
+                    break;
+                case 25:
+                    this.$ = new Ast.Array([]);
+                    break;
+                case 26:
+                    this.$ = new Ast.Array($$[$0 - 1]);
+                    break;
+                case 27:
+                    this.$ = new Ast.Identifier(yytext, null, yy.caseInsensitive);
+                    break;
+                case 28:
                     this.$ = new Ast.Identifier(yytext, $$[$0 - 2], yy.caseInsensitive);
                     break;
                 }
@@ -863,11 +949,14 @@
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 1: [3]
@@ -876,210 +965,275 @@
                 1: [2, 1]
             },
             {
-                4: [1, 12],
-                6: $V7,
-                7: $V8,
-                9: $V9,
-                10: $Va,
-                11: $Vb,
-                12: $Vc,
-                13: $Vd,
-                14: $Ve,
-                15: $Vf,
-                16: $Vg,
-                17: $Vh
-            },
-            {
-                5: 24,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            {
-                5: 25,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            o($Vi, [2, 16], {
-                26: [1, 26]
-            }), o($Vi, [2, 17]), o($Vi, [2, 18]), o($Vi, [2, 19]), o($Vi, [2, 20]), o($Vj, [2, 21]),
-            {
-                1: [2, 2]
+                4: [1, 15],
+                6: $V8,
+                7: $V9,
+                9: $Va,
+                10: $Vb,
+                11: $Vc,
+                12: $Vd,
+                13: $Ve,
+                14: $Vf,
+                15: $Vg,
+                16: $Vh,
+                17: $Vi
             },
             {
                 5: 27,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 5: 28,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            o($Vj, [2, 16], {
+                32: [1, 29]
+            }), o($Vj, [2, 17]), o($Vk, [2, 27]), o($Vl, [2, 18]), o($Vl, [2, 19]), o($Vl, [2, 20]), o($Vl, [2, 21]), o($Vl, [2, 22]),
+            {
+                21: 32,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                27: 31,
+                29: $V6,
+                30: [1, 30]
             },
             {
-                5: 29,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            {
-                5: 30,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            {
-                5: 31,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            {
-                5: 32,
-                8: $V0,
-                18: $V1,
-                20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                1: [2, 2]
             },
             {
                 5: 33,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 5: 34,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 5: 35,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 5: 36,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
                 5: 37,
                 8: $V0,
                 18: $V1,
                 20: 6,
-                21: $V2,
-                22: $V3,
-                23: $V4,
-                24: $V5,
-                25: $V6
-            },
-            o($Vi, [2, 5]),
-            {
-                6: $V7,
-                7: $V8,
-                9: $V9,
-                10: $Va,
-                11: $Vb,
-                12: $Vc,
-                13: $Vd,
-                14: $Ve,
-                15: $Vf,
-                16: $Vg,
-                17: $Vh,
-                19: [1, 38]
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
             {
-                25: [1, 39]
+                5: 38,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
             },
-            o($Vk, [2, 3], {
-                9: $V9,
-                10: $Va,
-                11: $Vb,
-                12: $Vc,
-                13: $Vd,
-                14: $Ve,
-                15: $Vf,
-                16: $Vg,
-                17: $Vh
-            }), o($Vk, [2, 4], {
-                9: $V9,
-                10: $Va,
-                11: $Vb,
-                12: $Vc,
-                13: $Vd,
-                14: $Ve,
-                15: $Vf,
-                16: $Vg,
-                17: $Vh
-            }), o($Vi, [2, 6]), o($Vi, [2, 7]), o($Vi, [2, 8]), o($Vi, [2, 9]), o($Vi, [2, 10]), o($Vi, [2, 11]), o($Vi, [2, 12]), o($Vi, [2, 13]), o($Vi, [2, 14]), o($Vi, [2, 15]), o($Vj, [2, 22])],
+            {
+                5: 39,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            {
+                5: 40,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            {
+                5: 41,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            {
+                5: 42,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            {
+                5: 43,
+                8: $V0,
+                18: $V1,
+                20: 6,
+                21: 7,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6,
+                31: $V7
+            },
+            o($Vj, [2, 5]),
+            {
+                6: $V8,
+                7: $V9,
+                9: $Va,
+                10: $Vb,
+                11: $Vc,
+                12: $Vd,
+                13: $Ve,
+                14: $Vf,
+                15: $Vg,
+                16: $Vh,
+                17: $Vi,
+                19: [1, 44]
+            },
+            {
+                31: [1, 45]
+            },
+            o($Vl, [2, 25]),
+            {
+                28: [1, 47],
+                30: [1, 46]
+            },
+            o($Vm, [2, 23]), o($Vn, [2, 3], {
+                9: $Va,
+                10: $Vb,
+                11: $Vc,
+                12: $Vd,
+                13: $Ve,
+                14: $Vf,
+                15: $Vg,
+                16: $Vh,
+                17: $Vi
+            }), o($Vn, [2, 4], {
+                9: $Va,
+                10: $Vb,
+                11: $Vc,
+                12: $Vd,
+                13: $Ve,
+                14: $Vf,
+                15: $Vg,
+                16: $Vh,
+                17: $Vi
+            }), o($Vj, [2, 6]), o($Vj, [2, 7]), o($Vj, [2, 8]), o($Vj, [2, 9]), o($Vj, [2, 10]), o($Vj, [2, 11]), o($Vj, [2, 12]), o($Vj, [2, 13]), o($Vj, [2, 14]), o($Vj, [2, 15]), o($Vk, [2, 28]), o($Vl, [2, 26]),
+            {
+                21: 48,
+                22: 9,
+                23: $V2,
+                24: $V3,
+                25: $V4,
+                26: $V5,
+                29: $V6
+            },
+            o($Vm, [2, 24])],
             defaultActions: {
                 2: [2, 1],
-                12: [2, 2]
+                15: [2, 2]
             },
             parseError: function parseError(str, hash) {
                 if (hash.recoverable) {

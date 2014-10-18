@@ -1,3 +1,7 @@
+function isToken(obj) {
+    return obj && angular.isFunction(obj.evaluate);
+}
+
 function lower(obj) {
     if (angular.isString(obj)) {
         obj = obj.trim().toLowerCase();
@@ -27,6 +31,27 @@ function like(a, b) {
     return a.indexOf(b) !== -1;
 }
 
+function equals(a, b) {
+    if (angular.isArray(a) && angular.isArray(b)) {
+        var len = a.length;
+        if (len !== b.length) {
+            return false;
+        }
+
+        var i;
+        for (i = 0; i < len; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return a == b;
+}
+
+// TODO: Improve operators logic
 var Ast = {
 
     EmptyQuery: function () {
@@ -45,7 +70,11 @@ var Ast = {
                 obj = this.parent.evaluate(obj);
             }
 
-            if (angular.isUndefined(obj) || obj === null || !this.id) {
+            if (angular.isUndefined(obj) || obj === null) {
+                return null;
+            }
+
+            if (!this.id) {
                 return obj;
             }
 
@@ -63,11 +92,27 @@ var Ast = {
         };
     },
 
+    Array: function (items) {
+        this.items = items;
+
+        this.evaluate = function (obj) {
+            var items = [];
+            angular.forEach(this.items, function (item) {
+                var value = isToken(item) ? item.evaluate(obj) : item;
+                items.push(value);
+            });
+
+            return items;
+        };
+    },
+
     Primitive: function (value) {
         this.value = value;
 
         this.evaluate = function (obj) {
-            return this.value;
+            return isToken(this.value)
+                ? this.value.evaluate(obj)
+                : this.value;
         };
     },
 
@@ -113,7 +158,7 @@ var Ast = {
         this.evaluate = function (obj) {
             var left = lower(this.left.evaluate(obj));
             var right = lower(this.right.evaluate(obj));
-            return left == right;
+            return equals(left, right);
         };
     },
 
