@@ -31,6 +31,8 @@ var queryFilter = function (filterFilter) {
     return function (array, query, options) {
         options = options || {};
 
+        var errorHandler = options.errorHandler || config.errorHandler;
+
         var result = [];
         var parser = $$parser(options);
         var root;
@@ -48,8 +50,11 @@ var queryFilter = function (filterFilter) {
                 });
             }
 
+            // Call errorHandler passing no error as argument
+            errorHandler(null);
+
         } catch (err) {
-            (options.errorHandler || config.errorHandler)(err);
+            errorHandler(err);
         }
 
         return result;
