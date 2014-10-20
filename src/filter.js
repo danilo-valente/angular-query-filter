@@ -5,22 +5,23 @@ var ngModule = angular.module('danilovalente.queryFilter', [
 /*
  * queryFilterConfig
  */
-var config = {
+var queryFilterConfig = {
     defaultGrammar: 'default',
     caseInsensitive: false,
     errorHandler: angular.noop
 };
 
-ngModule.value('queryFilterConfig', config);
+ngModule.value('queryFilterConfig', queryFilterConfig);
 
 /*
  * queryFilter
  */
-var queryFilter = function (filterFilter) {
+var queryFilter = function (filterFilter, queryFilterConfig) {
 
     function $$parser(options) {
-        parser.lexer = lexers[options.grammar] || lexers[config.defaultGrammar];
-        parser.yy.caseInsensitive = options.caseInsensitive || config.caseInsensitive;
+        var grammar = options.grammar || queryFilterConfig.defaultGrammar;
+        parser.lexer = angular.isString(grammar) ? lexers[grammar] : grammar;
+        parser.yy.caseInsensitive = options.caseInsensitive || queryFilterConfig.caseInsensitive;
         return parser;
     }
 
@@ -31,7 +32,7 @@ var queryFilter = function (filterFilter) {
     return function (array, query, options) {
         options = options || {};
 
-        var errorHandler = options.errorHandler || config.errorHandler;
+        var errorHandler = options.errorHandler || queryFilterConfig.errorHandler;
 
         var result = [];
         var parser = $$parser(options);
@@ -60,6 +61,6 @@ var queryFilter = function (filterFilter) {
         return result;
     };
 };
-queryFilter.$inject = ['filterFilter'];
+queryFilter.$inject = ['filterFilter', 'queryFilterConfig'];
 
 ngModule.filter('query', queryFilter);
